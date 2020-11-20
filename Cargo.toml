@@ -1,0 +1,15 @@
+[package]
+name = "rust-cms"
+version = "0.1.0"
+authors = ["Wojtek Korona <wojciech.korona@twoupdigital.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "0.2", features = ["macros"] }
+warp = "0.2"
+mobc-postgres = { version = "0.5", features = ["with-chrono-0_4"] }
+mobc = "0.5"
