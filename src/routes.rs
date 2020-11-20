@@ -10,9 +10,9 @@ use crate::data_access::DBAccessManager;
 use crate::errors::{AppError, ErrorType};
 
 pub fn customer_routes(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    // get_customer(pool.clone())
-    create_customer(pool.clone())
-        // .or(create_customer(pool.clone()))
+    get_customer(pool.clone())
+    // create_customer(pool.clone())
+        .or(create_customer(pool.clone()))
         .or(update_customer(pool.clone()))
         .or(delete_customer(pool.clone()))
         .or(customers_list(pool.clone()))
@@ -48,6 +48,13 @@ fn delete_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Re
         .and_then(handlers::delete_customer)
 }
 
+fn get_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("customers" / i64)
+        .and(warp::get())
+        .and(with_db_access_manager(pool))
+        .and_then(handlers::get_customer)
+}
+
 fn with_db_access_manager(pool: PgPool) -> impl Filter<Extract = (DBAccessManager,), Error = Rejection> + Clone {
     warp::any()
         .map(move || pool.clone())
@@ -65,11 +72,3 @@ fn with_json_body<T: DeserializeOwned + Send>(
     // (and to reject huge payloads)...
     warp::body::content_length_limit(1024 * 16).and(warp::body::json())
 }
-
-
-// fn get_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-//     warp::path!("customers" / String)
-//         .and(warp::get())
-//         .and(with_db_access_manager(pool))
-//         .and_then(handlers::get_customer)
-// }

@@ -55,16 +55,11 @@ pub async fn create_customer(db_manager: DBAccessManager, new_customer: CreateOr
 
 }
 
-// pub async fn get_customer(guid: String, db_manager: DBAccessManager) -> Result<Box<dyn Reply>, Infallible> {
-//     let customers = db.lock().await;
-//     for customer in customers.iter() {
-//         if customer.guid == guid {
-//             return Ok(Box::new(reply::json(&customer)));
-//         }
-//     }
-
-//     Ok(Box::new(StatusCode::NOT_FOUND))
-// }
+pub async fn get_customer(customer_id: i64, db_manager: DBAccessManager) -> Result<impl Reply, Rejection> {
+    log::info!("handling delete customer");
+    let result = db_manager.get_customer(customer_id);
+    respond(result, StatusCode::OK)
+}
 
 pub async fn update_customer(customer_id: i64, db_manager: DBAccessManager, updated_customer: CreateOrUpdateCustomer) -> Result<impl Reply, Rejection> {
     log::info!("handling update customer");

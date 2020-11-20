@@ -49,11 +49,11 @@ impl DBAccessManager {
             ))
             .execute(&self.connection)
             .map_err(|err| {
-                AppError::from_diesel_err(err, "while updating book status")
+                AppError::from_diesel_err(err, "while updating customer")
             })?;
 
         if updated == 0 {
-            return Err(AppError::new("Book not found", ErrorType::NotFound))
+            return Err(AppError::new("Customer not found", ErrorType::NotFound))
         }
         return Ok(updated)
     }
@@ -73,8 +73,14 @@ impl DBAccessManager {
         return Ok(deleted)
     }
 
-    // pub fn get_customer(&self, customer_id: i64) -> Result<CustomerDTO, AppError> {
-    //     use super::schema::customers::dsl::*;
-    // }
+    pub fn get_customer(&self, customer_id: i64) -> Result<Vec<CustomerDTO>, AppError> {
+        use super::schema::customers::dsl::*;
 
+        customers
+            .filter(id.eq(customer_id))
+            .load(&self.connection)
+            .map_err(|err| {
+                AppError::from_diesel_err(err, "while listing customers")
+            })
+    }
 }
