@@ -1,13 +1,8 @@
-use warp::{ self, Filter, Reply, Rejection, reject };
+use warp::{ self, Filter, Reply, Rejection };
 use crate::handlers;
 use serde::de::DeserializeOwned;
-
-use diesel::pg::PgConnection;
-use diesel::r2d2::{ConnectionManager, Pool};
-type PgPool = Pool<ConnectionManager<PgConnection>>;
-
-use crate::data_access::DBAccessManager;
-use crate::errors::{AppError, ErrorType};
+use crate::types::PgPool;
+use std::convert::Infallible;
 
 pub fn customer_routes(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_customer(pool.clone())
@@ -55,16 +50,20 @@ fn get_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejec
         .and_then(handlers::get_customer)
 }
 
-fn with_db_access_manager(pool: PgPool) -> impl Filter<Extract = (DBAccessManager,), Error = Rejection> + Clone {
+fn with_db_access_manager(pool: PgPool) -> impl Filter<Extract = (PgPool,), Error = Infallible> + Clone {
     warp::any()
         .map(move || pool.clone())
-        .and_then(|pool: PgPool| async move {  match pool.get() {
-            Ok(conn) => Ok(DBAccessManager::new(conn)),
-            Err(err) => Err(reject::custom(
-                AppError::new(format!("Error getting connection from pool: {}", err.to_string()).as_str(), ErrorType::Internal))
-            ),
-        }})
+        // .and_then(|pool: PgPool| async move {  match pool.get() {
+        //     Ok(conn) => Ok(DBAccessManager::new(conn)),
+        //     Err(err) => Err(reject::custom(
+        //         AppError::new(format!("Error getting connection from pool: {}", err.to_string()).as_str(), ErrorType::Internal))
+        //     ),
+        // }})
 }
+
+// pub fn injectState<T: Clone + Sized + Send>(state: T) -> impl Filter<Extract = (T,), Error = Infallible> + Clone {
+//     warp::any().map(move || state.clone())
+// }
 
 fn with_json_body<T: DeserializeOwned + Send>(
 ) -> impl Filter<Extract = (T,), Error = Rejection> + Clone {

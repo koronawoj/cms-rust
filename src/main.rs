@@ -7,6 +7,7 @@ mod schema;
 mod models;
 mod handlers;
 mod routes;
+mod types;
 
 use std::env;
 use warp::{Filter};
