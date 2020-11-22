@@ -24,7 +24,7 @@ fn pg_pool(db_url: &str) -> AsyncPool {
     let manager = ConnectionManager::<PgConnection>::new(db_url);
 
     let pool = Builder::new()
-        .max_size(15)
+        .max_size(10)
         .build(manager).unwrap();
     
     // let manager = ConnectionManager::<PgConnection>::new(db_url);

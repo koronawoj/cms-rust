@@ -15,5 +15,3 @@ log = "0.4"
 pretty_env_logger = "0.3"
 diesel = { version = "1.4.4", features = ["postgres", "r2d2"] }
 dotenv = "0.15.0"
-bb8 = "0.6.1"
-bb8-diesel = "0.2.0"
