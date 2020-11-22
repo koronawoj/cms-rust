@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate diesel;
 
+mod pool;
 mod errors;
 mod data_access;
 mod schema;
 mod models;
 mod handlers;
 mod routes;
-mod types;
 
 use std::env;
 use warp::{Filter};
@@ -16,14 +16,15 @@ use log::{info};
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
 use crate::errors::{AppError};
+use crate::pool::AsyncPool;
 
 use dotenv::dotenv;
 
-type PgPool = Pool<ConnectionManager<PgConnection>>;
-
-fn pg_pool(db_url: &str) -> PgPool {
+fn pg_pool(db_url: &str) -> AsyncPool {
     let manager = ConnectionManager::<PgConnection>::new(db_url);
-    Pool::new(manager).expect("Postgres connection pool could not be created")
+    let pool = Pool::new(manager).expect("Postgres connection pool could not be created");
+
+    AsyncPool::new(pool, 10)
 }
 
 #[tokio::main]

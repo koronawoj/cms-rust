@@ -1,10 +1,10 @@
 use warp::{ self, Filter, Reply, Rejection };
 use crate::handlers;
 use serde::de::DeserializeOwned;
-use crate::types::PgPool;
 use std::convert::Infallible;
+use crate::pool::AsyncPool;
 
-pub fn customer_routes(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn customer_routes(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_customer(pool.clone())
     // create_customer(pool.clone())
         .or(create_customer(pool.clone()))
@@ -13,14 +13,14 @@ pub fn customer_routes(pool: PgPool) -> impl Filter<Extract = impl Reply, Error 
         .or(customers_list(pool.clone()))
 }
 
-fn customers_list(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn customers_list(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("customers")
         .and(warp::get())
         .and(with_db_access_manager(pool))
         .and_then(handlers::list_customers)
 }
 
-fn create_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn create_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("customers")
         .and(warp::post())
         .and(with_db_access_manager(pool))
@@ -28,7 +28,7 @@ fn create_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Re
         .and_then(handlers::create_customer)
 }
 
-fn update_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn update_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("customers" / i64)
         .and(warp::put())
         .and(with_db_access_manager(pool))
@@ -36,29 +36,23 @@ fn update_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Re
         .and_then(handlers::update_customer)
 }
 
-fn delete_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn delete_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("customers" / i64)
         .and(warp::delete())
         .and(with_db_access_manager(pool))
         .and_then(handlers::delete_customer)
 }
 
-fn get_customer(pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn get_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("customers" / i64)
         .and(warp::get())
         .and(with_db_access_manager(pool))
         .and_then(handlers::get_customer)
 }
 
-fn with_db_access_manager(pool: PgPool) -> impl Filter<Extract = (PgPool,), Error = Infallible> + Clone {
+fn with_db_access_manager(pool: AsyncPool) -> impl Filter<Extract = (AsyncPool,), Error = Infallible> + Clone {
     warp::any()
         .map(move || pool.clone())
-        // .and_then(|pool: PgPool| async move {  match pool.get() {
-        //     Ok(conn) => Ok(DBAccessManager::new(conn)),
-        //     Err(err) => Err(reject::custom(
-        //         AppError::new(format!("Error getting connection from pool: {}", err.to_string()).as_str(), ErrorType::Internal))
-        //     ),
-        // }})
 }
 
 // pub fn injectState<T: Clone + Sized + Send>(state: T) -> impl Filter<Extract = (T,), Error = Infallible> + Clone {
