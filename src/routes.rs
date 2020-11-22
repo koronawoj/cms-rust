@@ -3,6 +3,7 @@ use crate::handlers;
 use serde::de::DeserializeOwned;
 use std::convert::Infallible;
 use crate::pool::AsyncPool;
+use crate::data_access::DBAccessManager;
 
 pub fn customer_routes(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     get_customer(pool.clone())
@@ -16,14 +17,14 @@ pub fn customer_routes(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Err
 fn customers_list(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("customers")
         .and(warp::get())
-        .and(with_db_access_manager(pool))
+        .and(inject_state(DBAccessManager::new(pool)))
         .and_then(handlers::list_customers)
 }
 
 fn create_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("customers")
         .and(warp::post())
-        .and(with_db_access_manager(pool))
+        .and(inject_state(DBAccessManager::new(pool)))
         .and(with_json_body())
         .and_then(handlers::create_customer)
 }
@@ -31,7 +32,7 @@ fn create_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error =
 fn update_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("customers" / i64)
         .and(warp::put())
-        .and(with_db_access_manager(pool))
+        .and(inject_state(DBAccessManager::new(pool)))
         .and(with_json_body())
         .and_then(handlers::update_customer)
 }
@@ -39,25 +40,20 @@ fn update_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error =
 fn delete_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("customers" / i64)
         .and(warp::delete())
-        .and(with_db_access_manager(pool))
+        .and(inject_state(DBAccessManager::new(pool)))
         .and_then(handlers::delete_customer)
 }
 
 fn get_customer(pool: AsyncPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("customers" / i64)
         .and(warp::get())
-        .and(with_db_access_manager(pool))
+        .and(inject_state(DBAccessManager::new(pool)))
         .and_then(handlers::get_customer)
 }
 
-fn with_db_access_manager(pool: AsyncPool) -> impl Filter<Extract = (AsyncPool,), Error = Infallible> + Clone {
-    warp::any()
-        .map(move || pool.clone())
+pub fn inject_state<T: Clone + Sized + Send>(state: T) -> impl Filter<Extract = (T,), Error = Infallible> + Clone {
+    warp::any().map(move || state.clone())
 }
-
-// pub fn injectState<T: Clone + Sized + Send>(state: T) -> impl Filter<Extract = (T,), Error = Infallible> + Clone {
-//     warp::any().map(move || state.clone())
-// }
 
 fn with_json_body<T: DeserializeOwned + Send>(
 ) -> impl Filter<Extract = (T,), Error = Rejection> + Clone {

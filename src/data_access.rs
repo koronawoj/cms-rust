@@ -4,6 +4,7 @@ use crate::errors::{AppError,ErrorType};
 use crate::handlers::{CreateOrUpdateCustomer};
 use crate::pool::AsyncPool;
 
+#[derive(Clone)]
 pub struct DBAccessManager {
     pool: AsyncPool,
 }
@@ -18,9 +19,7 @@ impl DBAccessManager {
     pub async fn list_customers(&self) -> Result<Vec<CustomerDTO>, AppError> {
         use super::schema::customers::dsl::*;
 
-        let connection = self.pool.get().await;
-
-        connection.deref(move |connection| {
+        self.pool.get(move |connection| {
             customers
                 .load(connection)
                 .map_err(|err| {
@@ -32,9 +31,7 @@ impl DBAccessManager {
     pub async fn create_customer(&self, dto: CreateOrUpdateCustomerDTO) -> Result<CustomerDTO, AppError> {
         use super::schema::customers;
 
-        let connection = self.pool.get().await;
-
-        connection.deref(move |connection| {
+        self.pool.get(move |connection| {
                 
             diesel::insert_into(customers::table) // insert into customers table
                 .values(&dto) // use values from CreateCustomerDTO
@@ -48,9 +45,7 @@ impl DBAccessManager {
     pub async fn update_customer(&self, customer_id: i64, updated_customer: CreateOrUpdateCustomer) -> Result<usize, AppError> {
         use super::schema::customers::dsl::*;
 
-        let connection = self.pool.get().await;
-
-        connection.deref(move |connection| {
+        self.pool.get(move |connection| {
             
             let updated = diesel::update(customers)
                 .filter(id.eq(customer_id))
@@ -75,9 +70,7 @@ impl DBAccessManager {
     pub async fn delete_customer(&self, customer_id: i64) -> Result<usize, AppError> {
         use super::schema::customers::dsl::*;
 
-        let connection = self.pool.get().await;
-
-        connection.deref(move |connection| {
+        self.pool.get(move |connection| {
                 
             let deleted = diesel::delete(customers.filter(id.eq(customer_id)))
                 .execute(connection)
@@ -95,9 +88,7 @@ impl DBAccessManager {
     pub async fn get_customer(&self, customer_id: i64) -> Result<Vec<CustomerDTO>, AppError> {
         use super::schema::customers::dsl::*;
 
-        let connection = self.pool.get().await;
-
-        connection.deref(move |connection| {
+        self.pool.get(move |connection| {
             customers
                 .filter(id.eq(customer_id))
                 .load(connection)

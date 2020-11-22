@@ -3,7 +3,6 @@ use crate::models::{CreateOrUpdateCustomerDTO};
 use crate::AppError;
 use crate::data_access::DBAccessManager;
 use warp::{self, Reply, Rejection, reply, reject, http::StatusCode};
-use crate::pool::AsyncPool;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct CreateOrUpdateCustomer {
@@ -35,20 +34,16 @@ impl IdResponse {
     }
 }
 
-pub async fn list_customers(pool: AsyncPool) -> Result<impl Reply, Rejection> {
+pub async fn list_customers(db_manager: DBAccessManager) -> Result<impl Reply, Rejection> {
     log::info!("handling list of customers");
-
-    let db_manager = DBAccessManager::new(pool);
 
     let result = db_manager.list_customers().await;
     respond(result, StatusCode::OK)
 }
 
-pub async fn create_customer(pool: AsyncPool, new_customer: CreateOrUpdateCustomer) -> Result<impl Reply, Rejection> {
+pub async fn create_customer(db_manager: DBAccessManager, new_customer: CreateOrUpdateCustomer) -> Result<impl Reply, Rejection> {
 
     log::info!("handling add customer");
-
-    let db_manager = DBAccessManager::new(pool);
 
     let create_customer_dto = new_customer.to_dto();
 
@@ -60,27 +55,22 @@ pub async fn create_customer(pool: AsyncPool, new_customer: CreateOrUpdateCustom
 
 }
 
-pub async fn get_customer(customer_id: i64, pool: AsyncPool) -> Result<impl Reply, Rejection> {
+pub async fn get_customer(customer_id: i64, db_manager: DBAccessManager) -> Result<impl Reply, Rejection> {
     log::info!("handling delete customer");
-    let db_manager = DBAccessManager::new(pool);
 
     let result = db_manager.get_customer(customer_id).await;
     respond(result, StatusCode::OK)
 }
 
-pub async fn update_customer(customer_id: i64, pool: AsyncPool, updated_customer: CreateOrUpdateCustomer) -> Result<impl Reply, Rejection> {
+pub async fn update_customer(customer_id: i64, db_manager: DBAccessManager, updated_customer: CreateOrUpdateCustomer) -> Result<impl Reply, Rejection> {
     log::info!("handling update customer");
-
-    let db_manager = DBAccessManager::new(pool);
 
     let response = db_manager.update_customer(customer_id, updated_customer).await;
     respond(response, StatusCode::OK)
 }
 
-pub async fn delete_customer(customer_id: i64, pool: AsyncPool) -> Result<impl Reply, Rejection> {
+pub async fn delete_customer(customer_id: i64, db_manager: DBAccessManager) -> Result<impl Reply, Rejection> {
     log::info!("handling delete customer");
-
-    let db_manager = DBAccessManager::new(pool);
 
     let result = db_manager.delete_customer(customer_id).await.map(|_| -> () {()});
     respond(result, StatusCode::NO_CONTENT)

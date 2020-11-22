@@ -22,7 +22,7 @@ impl AsyncPool {
         }
     }
 
-    pub async fn get(&self) -> AsyncPoolConnection {
+    pub async fn get_pool(&self) -> AsyncPoolConnection {
         let lock = self.semaphore.clone().acquire_owned().await;
 
         let pool = self.pool.clone();
@@ -36,6 +36,11 @@ impl AsyncPool {
             _lock: lock,
             conn
         }
+    }
+
+    pub async fn get<R: Send + 'static, F: Send + 'static>(&self, exec: F) -> R where F: FnOnce(&PgConnection) -> R {
+        let connection = self.get_pool().await;
+        connection.deref(exec).await
     }
 }
 
