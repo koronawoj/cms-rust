@@ -4,7 +4,6 @@ use crate::AppError;
 use crate::data_access::DBAccessManager;
 use warp::{self, Reply, Rejection, reply, reject, http::StatusCode};
 
-
 #[derive(Debug, Deserialize, Clone)]
 pub struct CreateOrUpdateCustomer {
     pub first_name: String,
@@ -37,7 +36,8 @@ impl IdResponse {
 
 pub async fn list_customers(db_manager: DBAccessManager) -> Result<impl Reply, Rejection> {
     log::info!("handling list of customers");
-    let result = db_manager.list_customers();
+
+    let result = db_manager.list_customers().await;
     respond(result, StatusCode::OK)
 }
 
@@ -47,7 +47,7 @@ pub async fn create_customer(db_manager: DBAccessManager, new_customer: CreateOr
 
     let create_customer_dto = new_customer.to_dto();
 
-    let id_response = db_manager.create_customer(create_customer_dto).map(|customer|
+    let id_response = db_manager.create_customer(create_customer_dto).await.map(|customer|
         { IdResponse::new(customer.guid) }
     );
 
@@ -57,19 +57,22 @@ pub async fn create_customer(db_manager: DBAccessManager, new_customer: CreateOr
 
 pub async fn get_customer(customer_id: i64, db_manager: DBAccessManager) -> Result<impl Reply, Rejection> {
     log::info!("handling delete customer");
-    let result = db_manager.get_customer(customer_id);
+
+    let result = db_manager.get_customer(customer_id).await;
     respond(result, StatusCode::OK)
 }
 
 pub async fn update_customer(customer_id: i64, db_manager: DBAccessManager, updated_customer: CreateOrUpdateCustomer) -> Result<impl Reply, Rejection> {
     log::info!("handling update customer");
-    let response = db_manager.update_customer(customer_id, updated_customer);
+
+    let response = db_manager.update_customer(customer_id, updated_customer).await;
     respond(response, StatusCode::OK)
 }
 
 pub async fn delete_customer(customer_id: i64, db_manager: DBAccessManager) -> Result<impl Reply, Rejection> {
     log::info!("handling delete customer");
-    let result = db_manager.delete_customer(customer_id).map(|_| -> () {()});
+
+    let result = db_manager.delete_customer(customer_id).await.map(|_| -> () {()});
     respond(result, StatusCode::NO_CONTENT)
 }
 

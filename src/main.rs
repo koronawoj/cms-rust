@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate diesel;
 
+mod pool;
 mod errors;
 mod data_access;
 mod schema;
@@ -13,25 +14,36 @@ use warp::{Filter};
 use log::{info};
 
 use diesel::pg::PgConnection;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::r2d2::{ConnectionManager, Builder};
 use crate::errors::{AppError};
+use crate::pool::AsyncPool;
 
-type PgPool = Pool<ConnectionManager<PgConnection>>;
+use dotenv::dotenv;
 
-fn pg_pool(db_url: &str) -> PgPool {
+fn pg_pool(db_url: &str) -> AsyncPool {
     let manager = ConnectionManager::<PgConnection>::new(db_url);
-    Pool::new(manager).expect("Postgres connection pool could not be created")
+
+    let pool = Builder::new()
+        .max_size(10)
+        .build(manager).unwrap();
+    
+    // let manager = ConnectionManager::<PgConnection>::new(db_url);
+    // let pool = Pool::new(manager).expect("Postgres connection pool could not be created");
+
+    AsyncPool::new(pool, 10)
 }
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
 
     if env::var_os("RUST_LOG").is_none() {
         env::set_var("RUST_LOG", "info");
     }
     pretty_env_logger::init();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL env not set");
+    let database_url = env::var("DATABASE_URL")
+        .expect("DATABASE_URL env not set");
 
     let pg_pool = pg_pool(database_url.as_str());
 
